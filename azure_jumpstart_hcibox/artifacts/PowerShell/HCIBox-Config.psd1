@@ -103,7 +103,7 @@
     DCName                               = "jumpstartdc"                          # Name of the domain controller virtual machine (limit to 14 characters)
 
     # NAT Configuration
-    natHostSubnet                        = "192.168.128.0/24"
+    natHostSubnet                        = "172.20.1.0/24"
     natHostVMSwitchName                  = "InternalNAT"
     natConfigure                         = $true
     natSubnet                            = "192.168.46.0/24"                      # This value is the subnet is the NAT router will use to route to  AzSMGMT to access the Internet. It can be any /24 subnet and is only used for routing.
