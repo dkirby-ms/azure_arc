@@ -114,6 +114,9 @@ resource vm 'Microsoft.Compute/virtualMachines@2022-03-01' = {
   name: vmName
   location: location
   tags: resourceTags
+  identity: {
+    type: 'SystemAssigned'
+  }
   properties: {
     hardwareProfile: {
       vmSize: 'Standard_E32s_v5'
@@ -259,6 +262,35 @@ resource vmBootstrap 'Microsoft.Compute/virtualMachines/extensions@2022-03-01' =
       ]
       commandToExecute: 'powershell.exe -ExecutionPolicy Bypass -File Bootstrap.ps1 -adminUsername ${windowsAdminUsername} -adminPassword ${encodedPassword} -spnClientId ${spnClientId} -spnClientSecret ${spnClientSecret} -spnTenantId ${spnTenantId} -subscriptionId ${subscription().subscriptionId} -spnProviderId ${spnProviderId} -resourceGroup ${resourceGroup().name} -azureLocation ${location} -stagingStorageAccountName ${stagingStorageAccountName} -workspaceName ${workspaceName} -templateBaseUrl ${templateBaseUrl} -registerCluster ${registerCluster} -deployAKSHCI ${deployAKSHCI} -deployResourceBridge ${deployResourceBridge} -natDNS ${natDNS} -rdpPort ${rdpPort} -autoDeployClusterResource ${autoDeployClusterResource} -autoUpgradeClusterResource ${autoUpgradeClusterResource}'
     }
+  }
+}
+
+resource vmRoleAssignment_KeyVaultSecretOfficer 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(vm.id, 'Microsoft.Authorization/roleAssignments', 'SecretOfficer')
+  scope: resourceGroup()
+  properties: {
+    principalId: vm.identity.principalId
+    roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6')
+  }
+}
+
+// Add role assignment for the VM: Azure Key Vault Certificates Officer role
+resource vmRoleAssignment_KeyVaultCertificatesOfficer 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(vm.id, 'Microsoft.Authorization/roleAssignments', 'CertificatesOfficer')
+  scope: resourceGroup()
+  properties: {
+    principalId: vm.identity.principalId
+    roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', 'f8a3ddcd-f2b4-4a3e-8f1a-7c6c0b6e8b6')
+  }
+}
+
+// Add role assignment for the VM: Owner role
+resource vmRoleAssignment_Owner 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(vm.id, 'Microsoft.Authorization/roleAssignments', 'Owner')
+  scope: resourceGroup()
+  properties: {
+    principalId: vm.identity.principalId
+    roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', '8e3af657-a8ff-443c-a75c-2fe8c4bcb635')
   }
 }
 
