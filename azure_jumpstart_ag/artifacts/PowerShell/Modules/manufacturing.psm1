@@ -283,6 +283,7 @@ function Deploy-AIO {
         }
         #Write-Host "AIO deployed successfully on the $clusterName cluster" -ForegroundColor Green
         #Write-Host "`n"
+        Start-Sleep -Seconds 60
         Write-Host "[$(Get-Date -Format t)] INFO: Started Event Grid role assignment process" -ForegroundColor DarkGray
         $extensionPrincipalId = (az k8s-extension list --cluster-name $arcClusterName --resource-group $resourceGroup --cluster-type "connectedClusters" --query "[?extensionType=='microsoft.iotoperations.mq']" --output json | ConvertFrom-Json).identity.principalId
         #$extensionPrincipalId = (az k8s-extension show --cluster-name $arcClusterName --name "mq" --resource-group $resourceGroup --cluster-type "connectedClusters" --output json | ConvertFrom-Json).identity.principalId
