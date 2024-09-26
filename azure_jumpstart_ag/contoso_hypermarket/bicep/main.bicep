@@ -285,3 +285,11 @@ module eventHub 'data/eventHub.bicep' = {
     stagingDataCGName: stagingDataCGName
   }
 }
+
+module ai 'ai/openai.bicep' = {
+  name: 'aiDeployment'
+  params:{
+    location: location
+    
+  }
+}
