@@ -40,6 +40,7 @@ az provider register --namespace Microsoft.AzureArcData --wait
 az provider register --namespace Microsoft.OperationsManagement --wait
 az provider register --namespace Microsoft.AzureStackHCI --wait
 az provider register --namespace Microsoft.ResourceConnector --wait
+az provider register --namespace Microsoft.Compute --wait
 
 #####################################################################
 # Add RBAC permissions
@@ -75,17 +76,6 @@ foreach ($key in $keys) {
         Write-Verbose "Key $key does not exist."
     }
 }
-
-#############################################################
-# Create Windows Terminal desktop shortcut
-#############################################################
-
-$WshShell = New-Object -comObject WScript.Shell
-$WinTerminalPath = (Get-ChildItem "C:\Program Files\WindowsApps" -Recurse | Where-Object { $_.name -eq "wt.exe" }).FullName
-$Shortcut = $WshShell.CreateShortcut("$Env:USERPROFILE\Desktop\Windows Terminal.lnk")
-$Shortcut.TargetPath = $WinTerminalPath
-$shortcut.WindowStyle = 3
-$shortcut.Save()
 
 #############################################################
 # Create desktop shortcut for Logs-folder

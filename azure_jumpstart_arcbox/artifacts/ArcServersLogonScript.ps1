@@ -558,7 +558,7 @@ if ($Env:flavor -ne 'DevOps') {
 
             }
 
-            Restart-VM -Name $ubuntu01vmName
+            Restart-VM -Name $ubuntu01vmName -Force
 
             Invoke-Command -HostName $Ubuntu02VmIp -KeyFilePath "$Env:USERPROFILE\.ssh\id_rsa" -UserName $nestedLinuxUsername -ScriptBlock {
 
@@ -566,7 +566,7 @@ if ($Env:flavor -ne 'DevOps') {
 
             }
 
-            Restart-VM -Name $ubuntu02vmName
+            Restart-VM -Name $ubuntu02vmName -Force
 
         }
 
@@ -619,6 +619,21 @@ if ($Env:flavor -ne 'DevOps') {
         Write-Output 'Onboarding the nested Linux VMs as an Azure Arc-enabled servers'
         $UbuntuSessions = New-PSSession -HostName $Ubuntu01VmIp, $Ubuntu02VmIp -KeyFilePath "$Env:USERPROFILE\.ssh\id_rsa" -UserName $nestedLinuxUsername
         Invoke-JSSudoCommand -Session $UbuntuSessions -Command "sh /home/$nestedLinuxUsername/installArcAgentModifiedUbuntu.sh"
+
+        Write-Header 'Installing Dependency Agent for Arc-enabled Windows servers'
+        $VMs = @("$namingPrefix-SQL", "$namingPrefix-Win2K22", "$namingPrefix-Win2K25")
+        $VMs | ForEach-Object -Parallel {
+
+            $null = Connect-AzAccount -Identity -Tenant $using:tenantId -Subscription $using:subscriptionId -Scope Process -WarningAction SilentlyContinue
+
+            $vm = $PSItem
+
+            Write-Output "Invoking installation on $vm"
+
+            # Install Dependency Agent
+            $null = New-AzConnectedMachineExtension -ResourceGroupName $using:resourceGroup -MachineName $vm -Name DependencyAgentWindows -Publisher Microsoft.Azure.Monitoring.DependencyAgent -ExtensionType DependencyAgentWindows -Location $using:azureLocation -Settings @{"enableAMA" = $true} -NoWait
+
+        }
 
         Write-Header 'Enabling SSH access and triggering update assessment for Arc-enabled servers'
         $VMs = @("$namingPrefix-SQL", "$namingPrefix-Ubuntu-01", "$namingPrefix-Ubuntu-02", "$namingPrefix-Win2K22", "$namingPrefix-Win2K25")

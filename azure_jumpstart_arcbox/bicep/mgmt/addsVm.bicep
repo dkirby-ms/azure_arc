@@ -14,7 +14,7 @@ param windowsAdminUsername string = 'arcdemo'
 param windowsAdminPassword string
 
 @description('The Windows version for the VM. This will pick a fully patched image of this given Windows version')
-param windowsOSVersion string = '2022-datacenter-g2'
+param windowsOSVersion string = '2025-datacenter-g2'
 
 @description('Location for all resources')
 param azureLocation string = resourceGroup().location
@@ -45,7 +45,7 @@ var PublicIPNoBastion = {
   id: publicIpAddress.id
 }
 
-resource networkInterface 'Microsoft.Network/networkInterfaces@2022-01-01' = {
+resource networkInterface 'Microsoft.Network/networkInterfaces@2024-05-01' = {
   name: networkInterfaceName
   location: azureLocation
   properties: {
@@ -65,7 +65,7 @@ resource networkInterface 'Microsoft.Network/networkInterfaces@2022-01-01' = {
   }
 }
 
-resource publicIpAddress 'Microsoft.Network/publicIpAddresses@2022-01-01' = if (!deployBastion) {
+resource publicIpAddress 'Microsoft.Network/publicIPAddresses@2024-05-01' = if (!deployBastion) {
   name: publicIpAddressName
   location: azureLocation
   properties: {
@@ -79,7 +79,7 @@ resource publicIpAddress 'Microsoft.Network/publicIpAddresses@2022-01-01' = if (
   }
 }
 
-resource clientVM 'Microsoft.Compute/virtualMachines@2022-03-01' = {
+resource clientVM 'Microsoft.Compute/virtualMachines@2024-07-01' = {
   name: clientVMName
   location: azureLocation
   properties: {
@@ -120,9 +120,12 @@ resource clientVM 'Microsoft.Compute/virtualMachines@2022-03-01' = {
       }
     }
   }
+  identity: {
+    type: 'SystemAssigned'
+  }
 }
 
-resource vmName_DeployADDS 'Microsoft.Compute/virtualMachines/extensions@2022-03-01' = {
+resource vmName_DeployADDS 'Microsoft.Compute/virtualMachines/extensions@2024-07-01' = {
   parent: clientVM
   name: 'DeployADDS'
   location: azureLocation
@@ -135,8 +138,28 @@ resource vmName_DeployADDS 'Microsoft.Compute/virtualMachines/extensions@2022-03
       fileUris: [
         uri(templateBaseUrl, 'artifacts/SetupADDS.ps1')
       ]
-      commandToExecute: 'powershell.exe -ExecutionPolicy Bypass -File SetupADDS.ps1 -domainName ${addsDomainName} -domainAdminUsername ${windowsAdminUsername} -domainAdminPassword ${windowsAdminPassword} -templateBaseUrl ${templateBaseUrl}'
+      commandToExecute: 'powershell.exe -ExecutionPolicy Bypass -File SetupADDS.ps1 -domainName ${addsDomainName} -domainAdminUsername ${windowsAdminUsername} -templateBaseUrl ${templateBaseUrl}'
     }
+  }
+}
+
+// Role assignment for Reader
+resource vmReaderRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(clientVM.id, 'reader')
+  scope: resourceGroup()
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'acdd72a7-3385-48ef-bd42-f606fba81ae7')
+    principalId: clientVM.identity.principalId
+  }
+}
+
+// Role assignment for Key Vault Secret Reader
+resource vmKeyVaultSecretReaderRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(clientVM.id, 'keyVaultSecretReader')
+  scope: resourceGroup()
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6')
+    principalId: clientVM.identity.principalId
   }
 }
 
