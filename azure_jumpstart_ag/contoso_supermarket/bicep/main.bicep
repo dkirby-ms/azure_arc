@@ -83,10 +83,21 @@ param rdpPort string = '3389'
 @description('Enable automatic logon into Virtual Machine')
 param vmAutologon bool = true
 
+@description('Name of the NAT Gateway')
+param natGatewayName string = 'Ag-NatGateway-${namingGuid}'
+
 @description('The agora scenario to be deployed')
 param scenario string = 'contoso_supermarket'
 
 var templateBaseUrl = 'https://raw.githubusercontent.com/${githubAccount}/azure_arc/${githubBranch}/azure_jumpstart_ag/'
+
+var customerUsageAttributionDeploymentName = '7d736ea9-23b4-4134-95a1-560ab7196aae'
+
+module customerUsageAttribution 'mgmt/customerUsageAttribution.bicep' = {
+  name: 'pid-${customerUsageAttributionDeploymentName}'
+  params: {
+  }
+}
 
 module mgmtArtifactsAndPolicyDeployment 'mgmt/mgmtArtifacts.bicep' = {
   name: 'mgmtArtifactsAndPolicyDeployment'
@@ -104,6 +115,7 @@ module networkDeployment 'mgmt/network.bicep' = {
     subnetNameCloudAksInnerLoop: subnetNameCloudAksInnerLoop
     deployBastion: deployBastion
     location: location
+    natGatewayName: natGatewayName
   }
 }
 

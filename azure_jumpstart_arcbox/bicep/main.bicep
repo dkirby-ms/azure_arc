@@ -76,8 +76,11 @@ param debugEnabled bool = false
 
 @description('Tags to assign for all ArcBox resources')
 param resourceTags object = {
-  Solution: 'jumpstart_arcbox'
+  Solution: 'jumpstart_arcbox_${toLower(flavor)}'
 }
+
+@description('Name of the NAT Gateway')
+param natGatewayName string = '${namingPrefix}-NatGateway'
 
 @maxLength(7)
 @description('The naming prefix for the nested virtual machines and all Azure resources deployed. The maximum length for the naming prefix is 7 characters,example: `ArcBox-Win2k19`')
@@ -108,6 +111,7 @@ var aksDrArcDataClusterName = '${namingPrefix}-AKS-DR-Data-${guid}'
 var k3sArcDataClusterName = '${namingPrefix}-K3s-Data-${guid}'
 var k3sArcClusterName = '${namingPrefix}-K3s-${guid}'
 var k3sClusterNodesCount = 3 // Number of nodes to deploy in the K3s cluster
+var customerUsageAttributionDeploymentName = (flavor == 'DevOps' ? '390d1642-349e-43c5-845e-8c7cc0972f22' : flavor == 'DataOps' ? 'a8caf3c1-0980-4e23-8c52-27e5d424dbbd' : 'c4a26bed-72cb-415d-91a3-e2577c7c92f5')
 
 module ubuntuRancherK3sDataSvcDeployment 'kubernetes/ubuntuRancher.bicep' = if (flavor == 'DevOps' || flavor == 'DataOps') {
   name: 'ubuntuRancherK3sDataSvcDeployment'
@@ -239,6 +243,7 @@ module mgmtArtifactsAndPolicyDeployment 'mgmt/mgmtArtifacts.bicep' = {
     namingPrefix: namingPrefix
     windowsAdminPassword: windowsAdminPassword
     registryPassword: registryPassword
+    natGatewayName: natGatewayName
   }
 }
 
@@ -291,6 +296,12 @@ module aksDeployment 'kubernetes/aks.bicep' = if (flavor == 'DataOps') {
     stagingStorageAccountDeployment
     mgmtArtifactsAndPolicyDeployment
   ]
+}
+
+module customerUsageAttribution 'mgmt/customerUsageAttribution.bicep' = {
+  name: 'pid-${customerUsageAttributionDeploymentName}'
+  params: {
+  }
 }
 
 output clientVmLogonUserName string = flavor == 'DataOps' ? '${windowsAdminUsername}@${addsDomainName}' : ''

@@ -93,6 +93,9 @@ param azureOpenAIModel object = {
     apiVersion: '2024-08-01-preview'
 }
 
+@description('Name of the NAT Gateway')
+param natGatewayName string = 'Ag-NatGateway-${namingGuid}'
+
 // @description('Option to deploy GPU-enabled nodes for the K3s Worker nodes.')
 // param deployGPUNodes bool = false
 
@@ -108,6 +111,13 @@ param k8sWorkerNodesSku string = 'Standard_D8s_v5'
 var templateBaseUrl = 'https://raw.githubusercontent.com/${githubAccount}/azure_arc/${githubBranch}/azure_jumpstart_ag/'
 var k3sClusterNodesCount = 2 // Number of nodes to deploy in the K3s cluster
 
+var customerUsageAttributionDeploymentName = '71393591-614c-4cbc-add8-d69954f3c9ec'
+
+module customerUsageAttribution 'mgmt/customerUsageAttribution.bicep' = {
+  name: 'pid-${customerUsageAttributionDeploymentName}'
+  params: {
+  }
+}
 module mgmtArtifactsAndPolicyDeployment 'mgmt/mgmtArtifacts.bicep' = {
   name: 'mgmtArtifactsAndPolicyDeployment'
   params: {
@@ -124,6 +134,7 @@ module networkDeployment 'mgmt/network.bicep' = {
     subnetNameCloud: subnetNameCloud
     deployBastion: deployBastion
     location: location
+    natGatewayName: natGatewayName
   }
 }
 
